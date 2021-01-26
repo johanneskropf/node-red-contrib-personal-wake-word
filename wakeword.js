@@ -83,10 +83,13 @@ module.exports = function(RED) {
             
             node.detector.on('keyword', ({keyword, score, threshold, timestamp}) => {
                 let msg = {};
-                msg[node.outputProp].keyword = keyword;
-                msg[node.outputProp].timestamp = timestamp;
-                msg[node.outputProp].score = score;
-                msg[node.outputProp].threshold = threshold;
+                const detection = {
+                    keyword: keyword,
+                    timestamp: timestamp,
+                    score: score,
+                    threshold: threshold
+                };
+                msg[node.outputProp] = detection
                 node.send(msg);
                 node_status(["keyword detected","green","dot"]);
             });
