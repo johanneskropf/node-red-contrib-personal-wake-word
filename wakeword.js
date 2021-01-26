@@ -20,16 +20,18 @@ module.exports = function(RED) {
     const fs = require("fs"); 
     
     function WakeWordNode (config) {
+        
         RED.nodes.createNode(this,config);
+        
         this.statusTimer = false;
-        this.statusTimer2 = false;
+        this.inputTimeout = false;
+        this.threshold = Number(config.threshold);
+        this.averaging = (config.averaging === true) ? false : true;
+        this.inputProp = config.inputProp || "payload";
+        this.outputProp = config.outputProp || "payload";
         this.wakeWordConfig = RED.nodes.getNode(config.wakeword);
         
         var node = this;
-        
-        node.wakeWordConfig.files.forEach(file => {
-            node.warn(fs.lstatSync(file).isFile());
-        });
         
         function node_status(state1 = [], timeout = 0, state2 = []){
             
@@ -66,8 +68,8 @@ module.exports = function(RED) {
             });
             
             await node.detector.addKeyword("test", node.wakeWordConfig.files, {
-                disableAveraging: false, 
-                threshold: 0.6
+                disableAveraging: node.averaging, 
+                threshold: node.threshold
             });
             
             node.detector.on('ready', () => {
@@ -80,12 +82,12 @@ module.exports = function(RED) {
             });
             
             node.detector.on('keyword', ({keyword, score, threshold, timestamp}) => {
-                let payload = {};
-                payload.keyword = keyword;
-                payload.timestamp = timestamp;
-                payload.score = score;
-                payload.threshold = threshold;
-                node.send({payload:payload});
+                let msg = {};
+                msg[node.outputProp].keyword = keyword;
+                msg[node.outputProp].timestamp = timestamp;
+                msg[node.outputProp].score = score;
+                msg[node.outputProp].threshold = threshold;
+                node.send(msg);
                 node_status(["keyword detected","green","dot"]);
             });
         }
@@ -102,18 +104,44 @@ module.exports = function(RED) {
             
         }
         
-        this.on('input', function(msg, send, done) {
+        function inputTimeoutTimer(){
+            if (node.inputTimeout !== false) {
+                clearTimeout(node.inputTimeout);
+                node.inputTimeout = false;
+            }
+            node.inputTimeout = setTimeout(() => {
+                node.detector.destroy();
+                node.detector = null;
+                node.inputTimeout = false;
+                node_status(["stopped","grey","dot"],1500);
+            }, 2000);
+        }
+        
+        node.on('input', function(msg, send, done) {
             
-            if (Buffer.isBuffer(msg.payload)) {
+            const input = RED.util.getMessageProperty(msg, node.inputProp);
+            
+            if (Buffer.isBuffer(input)) {
                 if (!node.detector) {
                     node_status(["starting detector","blue","ring"]);
                     startDetector();
                 } else {
-                    writeChunk(msg.payload);
+                    writeChunk(input);
+                    inputTimeoutTimer();
                 }
             }
             if (done) { done(); }
             
+        });
+        
+        node.on("close",function() {
+            clearTimeout(node.inputTimeout);
+            node.inputTimeout = false;
+            node.detector.destroy();
+            node.detector = null;
+            clearTimeout(node.statusTimer);
+            node.statusTimer = false;
+            node.status({});
         });
     
     }
