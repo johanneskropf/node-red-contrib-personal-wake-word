@@ -1,0 +1,28 @@
+{
+  "name": "node-red-contrib-personal-wake-word",
+  "version": "0.1.0",
+  "description": "a node-red integration of node-personal-wakeword",
+  "author": "Johannes Kropf",
+  "license": "Apache-2.0",
+  
+  "keywords": [
+    "wake-word",
+    "kws",
+    "wakeword",
+    "nodered",
+    "node-red"
+  ],
+  "repository": {
+        "type": "git",
+        "url": "https://github.com/johanneskropf/node-red-contrib-personal-wake-word.git"
+  },
+  "dependencies":{
+      "node-personal-wakeword":"mathquis/node-personal-wakeword"
+  },
+  "node-red": {
+        "nodes": {
+            "wake-word": "wakeword.js",
+            "wake-word-config": "wakeword_config.js"
+        }
+    }
+}

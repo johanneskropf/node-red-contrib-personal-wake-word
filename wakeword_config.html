@@ -1,0 +1,71 @@
+<!--
+  Copyright 2021, Johannes Kropf
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+  http://www.apache.org/licenses/LICENSE-2.0
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+
+<script type="text/javascript">
+    RED.nodes.registerType('wakeword-config',{
+        category: 'config',
+        defaults: {
+            name: {value:""},
+            files: {value:[]}
+        },
+        label: function() {
+            return this.name || "wake-word-config";
+        },
+        oneditprepare: function() {
+            var filesList = $("#node-input-files-container").css('height','600px').css('min-height','200px').css('min-width','200px').editableList({
+                header: $("<div>").append($.parseHTML(
+                   "<div style='width:100%; margin-left:5px; display: inline-grid'><b>Audio File Paths</b></div>")),
+                addItem: function(container, i, file) {
+                    // When slot === {} then we have a new list item (i.e. user pressed the addItem button)
+                    if (Object.keys(file).length === 0) {
+                        // Initialize new items in the list.
+                        file = {
+                            filePath    : ""
+                        };
+                    }
+                    var row = $('<div/>').appendTo(container);
+                    var filePathField = $('<input/>',{class:"node-input-file-filePath",type:"text",placeholder:"File Path"}).css({"resize":"none","vertical-align":"top","width":"100%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
+                    filePathField.prop('required',true);
+                    filePathField.val(file.filePath);
+                },
+                removable: true
+            });
+            if (this.files) {
+                this.files.forEach(function (file, index) {
+                    filesList.editableList('addItem', {filePath:file});
+                });
+            }
+        },
+        oneditsave: function() {
+            var node = this;
+            node.files = [];
+            var filesList = $("#node-input-files-container").editableList('items');
+            filesList.each(function(i) {
+                var file = $(this);
+                var filePath   = file.find(".node-input-file-filePath").val();
+                node.files.push(filePath);
+            });
+        }
+    });
+</script>
+
+<script type="text/html" data-template-name="wakeword-config">
+    <div class="form-row">
+        <label for="node-config-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-config-input-name">
+    </div>
+    <div class="form-row form-row-auto-height">
+        <!-- Table with slot files -->
+        <ol id="node-input-files-container"></ol>
+    </div>
+</script>
