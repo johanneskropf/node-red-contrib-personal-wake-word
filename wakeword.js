@@ -26,6 +26,7 @@ module.exports = function(RED) {
         
         this.statusTimer = false;
         this.inputTimeout = false;
+        this.recoverTimeout = false;
         this.errorStop = false;
         this.files = [];
         this.threshold = Number(config.threshold);
@@ -76,6 +77,10 @@ module.exports = function(RED) {
             });
             
             node.detector.on('ready', () => {
+                if (node.recoverTimeout) {
+                    clearTimeout(node.recoverTimeout);
+                    node.recoverTimeout = false;
+                }
                 node_status(["listening...","blue","dot"]);
             })
             
@@ -95,6 +100,7 @@ module.exports = function(RED) {
                 msg[node.outputProp] = detection
                 node.send(msg);
                 node_status(["keyword detected","green","dot"]);
+                recoverTimeoutTimer();
             });
         }
         
@@ -121,6 +127,19 @@ module.exports = function(RED) {
                 node.inputTimeout = false;
                 node_status(["stopped","grey","dot"],1500);
             }, 2000);
+        }
+        
+        function recoverTimeoutTimer () {
+            if (node.recoverTimeout !== false) {
+                clearTimeout(node.recoverTimeout);
+                node.recoverTimeout = false;
+            }
+            node.recoverTimeout = setTimeout(() => {
+                node.detector.destroy();
+                node.detector = null;
+                node.recoverTimeout = false;
+                node_status(["stopped","grey","dot"],1500);
+            }, 3000);
         }
         
         function checkFiles (input){
