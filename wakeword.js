@@ -142,14 +142,14 @@ module.exports = function(RED) {
                         content.forEach(item => {
                             if (item.match(/\.wav$/g) !== null) {
                                 let fullPath = path.join(file,item);
-                                node.files.push(fullPath);
+                                if (!node.files.includes(fullPath)) { node.files.push(fullPath); }
                             } else {
                                 node.warn(`ignoring ${item} as it is not a wav`);
                             }
                         });
                     });
                 } else if (file.match(/\.wav$/g) !== null) {
-                    node.files.push(file);
+                    if (!node.files.includes(file)) { node.files.push(file); }
                 } else {
                     node.warn(`ignoring ${file} as it is neither a folder nor a wav`);
                 }
