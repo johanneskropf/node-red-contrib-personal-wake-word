@@ -17,7 +17,8 @@
 module.exports = function(RED) {
     
     const wakewordDetector = require("node-personal-wakeword");
-    const fs = require("fs"); 
+    const fs = require("fs");
+    const path = require("path");
     
     function WakeWordNode (config) {
         
@@ -26,6 +27,7 @@ module.exports = function(RED) {
         this.statusTimer = false;
         this.inputTimeout = false;
         this.errorStop = false;
+        this.files = [];
         this.threshold = Number(config.threshold);
         this.averaging = (config.averaging === true) ? false : true;
         this.inputProp = config.inputProp || "payload";
@@ -62,13 +64,13 @@ module.exports = function(RED) {
             }
         }
         
-        async function startDetector () {
+        async function startDetector (input) {
             
             node.detector = new wakewordDetector ({
                 threshold: 0.5 // Default value
             });
             
-            await node.detector.addKeyword("test", node.wakeWordConfig.files, {
+            await node.detector.addKeyword(node.wakeWordConfig.name , input, {
                 disableAveraging: node.averaging, 
                 threshold: node.threshold
             });
@@ -121,15 +123,42 @@ module.exports = function(RED) {
             }, 2000);
         }
         
-        function checkFiles (){
-            let check = true;
-            node.wakeWordConfig.files.forEach(file => {
-                if (!fs.existsSync(file) || file.match(/\.wav$/g) === null) {
-                    check = false;
+        function checkFiles (input){
+            input.forEach(file => {
+                if (!fs.existsSync(file)) {
+                    node.errorStop = true;
+                    node_status(["error","red","dot"]);
+                    const errortxt = "please check your paths or files, paths should be to 16 bit , 16000hz, mono wav files containing only the clean wake word audio or to a folder containing them";
+                    node.error(errortxt);
+                    return;
+                }
+                if (fs.statSync(file).isDirectory()) {
+                    fs.readdir(file, function (err, content) {
+                        if (err) {
+                            node.errorStop = true;
+                            node.error('Unable to scan directory: ' + err);
+                            return;
+                        }
+                        content.forEach(item => {
+                            if (item.match(/\.wav$/g) !== null) {
+                                let fullPath = path.join(file,item);
+                                node.files.push(fullPath);
+                            } else {
+                                node.warn(`ignoring ${item} as it is not a wav`);
+                            }
+                        });
+                    });
+                } else if (file.match(/\.wav$/g) !== null) {
+                    node.files.push(file);
+                } else {
+                    node.warn(`ignoring ${file} as it is neither a folder nor a wav`);
                 }
             });
-            return check;
+            node_status(["ready","grey","dot"]);
+            return;
         }
+        
+        checkFiles(node.wakeWordConfig.files);
         
         node.on('input', function(msg, send, done) {
             
@@ -142,15 +171,8 @@ module.exports = function(RED) {
             
             if (Buffer.isBuffer(input)) {
                 if (!node.detector) {
-                    if (!checkFiles()) {
-                        node.errorStop = true;
-                        node_status(["error","red","dot"]);
-                        const errortxt = "please check your file paths or files, files should be 16 bit , 16000hz, mono wav files containing only the clean wake word audio.";
-                        (done) ? done(errortxt) : node.error(errortxt);
-                        return;
-                    }
                     node_status(["starting detector","blue","ring"]);
-                    startDetector();
+                    startDetector(node.files);
                 } else {
                     writeChunk(input);
                     inputTimeoutTimer();

@@ -24,7 +24,7 @@
         oneditprepare: function() {
             var filesList = $("#node-input-files-container").css('height','600px').css('min-height','200px').css('min-width','200px').editableList({
                 header: $("<div>").append($.parseHTML(
-                   "<div style='width:100%; margin-left:5px; display: inline-grid'><b>Audio File Paths</b></div>")),
+                   "<div style='width:100%; margin-left:5px; display: inline-grid'><b>Audio Folder or File Paths</b></div>")),
                 addItem: function(container, i, file) {
                     // When slot === {} then we have a new list item (i.e. user pressed the addItem button)
                     if (Object.keys(file).length === 0) {
