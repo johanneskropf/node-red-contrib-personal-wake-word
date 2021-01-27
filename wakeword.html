@@ -106,5 +106,49 @@
 </script>
 
 <script type="text/html" data-help-name="wake-word">
-    <p>this is a test</p>
+    <p><strong>A node that listens to a stream of raw audio buffers to detect a wakeword
+    based on audio samples provided using the
+    <a href="https://github.com/mathquis/node-personal-wakeword">node-personal-wakeword</a> module.
+    </strong><br/></p>
+    <p><strong>Usage:</strong><br/>
+    This node will listen to a stream of raw audio buffers send to its configured input
+    to detect a wake-word configured in its configuration node.
+    The stream needs to have a certain format:<br/>
+    <i>Raw audio, little endian, signed-integer, mono, 16000 Hz, 16 bit.</i><br/>
+    It will send a message to the first output in the configured <code>msg</code> property when a
+    wake word was detected. When the node receives a message of <strong>stop</strong> in the configured
+    control property of the input <code>msg</code> it will stop the wake word detection process.
+    If you dont stop the input stream of audio buffers the wait wake process will start again. 
+    When the node receives a message of <strong>pause</strong> in the configured
+    control property of the input <code>msg</code> it will pause sending messages when a wake-word 
+    was detected. When the node receives a message of <strong>forward</strong> in the configured
+    control property of the input <code>msg</code> it will forward the input audio to its second 
+    output. When the node receives a message of <strong>stop_forward</strong> in the configured
+    control property of the input <code>msg</code> it will stop forwarding the input audio to the 
+    second output. When the node receives a message of <strong>stop_pause</strong> in the configured
+    control property of the input <code>msg</code> it will unpause if paused. The 
+    <strong>listen</strong> command in the configured control property of the input <code>msg</code>
+    will do both unpause and also stop forwarding.<br/>
+    </p>
+    <p><strong>Configuration:</strong><br/>
+    You need to choose a configuration that the node will
+    use. The wake-word configuration will determin which audio files will be used to generate the
+    detector. You can than configure the threshold used to detect when listening. The higher the threshold 
+    the lower the sensitivity but also less false positives will occur. 
+    You can decide to activate or deactivate template averaging. Its activated by default. 
+    With it deactivated the detector will need more resources but might have better detection 
+    performance. There is also an optional 
+    setting to automatically passthrough the stream of raw audio buffers when a wake word
+    was detected.
+    If this option is checked the node will automatically forward the audio stream on its second output 
+    when a wake word was detected and ignore further detections. It will do so until
+    it receives a payload of <strong>listen</strong> or <strong>stop_forwarding</strong> on
+    its control <code>msg</code> property as per above. It will stop forwarding and/or go back to 
+    listening after depending on the control message send. You can configure the input, 
+    output and control properties of the <code>msg</code> object that the
+    node listens on and emits messages on.<br/></p>
+    <p><strong>Further Documentation:</strong><br/>
+    You can find the nodes repository
+    <a href="https://github.com/johanneskropf/node-red-contrib-personal-wake-word">here
+    </a>.</p>
 </script>

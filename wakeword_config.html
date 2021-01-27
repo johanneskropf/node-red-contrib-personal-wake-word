@@ -69,3 +69,25 @@
         <ol id="node-input-files-container"></ol>
     </div>
 </script>
+
+<script type="text/html" data-help-name="wakeword-config">
+    <p><strong>A node that listens to a stream of raw audio buffers to detect a wakeword
+    based on audio samples provided using the
+    <a href="https://github.com/mathquis/node-personal-wakeword">node-personal-wakeword</a> module.
+    </strong><br/></p>
+    <p><strong>Configuration:</strong><br/>
+    A wake-word configuration defines which audio files should be used to make a template to compare against
+    the incoming audio stream to detect the wake-word. The audio files used should be 
+    trimmed clean noise free recordings of the wake-word you want to detect. It is best if the samples 
+    are recorded with the microphone you plan to use in production but in a quiet environment.
+    The files need to be wav audio in the following format:
+    little endian, signed-integer, mono, 16000 Hz, 16 bit.
+    You can either add the paths to each file to be used individually or add a path to a folder 
+    containing the wav files you want to use. There should be at least three reference files.
+    Each generated template will be speaker specific. You may want to use one configuration per user.
+    <br/></p>
+    <p><strong>Further Documentation:</strong><br/>
+    You can find the nodes repository
+    <a href="https://github.com/johanneskropf/node-red-contrib-personal-wake-word">here
+    </a>.</p>
+</script>
