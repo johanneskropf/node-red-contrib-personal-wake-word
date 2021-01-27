@@ -25,6 +25,7 @@ module.exports = function(RED) {
         
         this.statusTimer = false;
         this.inputTimeout = false;
+        this.errorStop = false;
         this.threshold = Number(config.threshold);
         this.averaging = (config.averaging === true) ? false : true;
         this.inputProp = config.inputProp || "payload";
@@ -120,12 +121,34 @@ module.exports = function(RED) {
             }, 2000);
         }
         
+        function checkFiles (){
+            let check = true;
+            node.wakeWordConfig.files.forEach(file => {
+                if (!fs.existsSync(file) || file.match(/\.wav$/g) === null) {
+                    check = false;
+                }
+            });
+            return check;
+        }
+        
         node.on('input', function(msg, send, done) {
+            
+            if (node.errorStop) {
+                if (done) { done(); }
+                return;
+            }
             
             const input = RED.util.getMessageProperty(msg, node.inputProp);
             
             if (Buffer.isBuffer(input)) {
                 if (!node.detector) {
+                    if (!checkFiles()) {
+                        node.errorStop = true;
+                        node_status(["error","red","dot"]);
+                        const errortxt = "please check your file paths or files, files should be 16 bit , 16000hz, mono wav files containing only the clean wake word audio.";
+                        (done) ? done(errortxt) : node.error(errortxt);
+                        return;
+                    }
                     node_status(["starting detector","blue","ring"]);
                     startDetector();
                 } else {
@@ -134,7 +157,7 @@ module.exports = function(RED) {
                 }
             }
             if (done) { done(); }
-            
+            return;
         });
         
         node.on("close",function() {

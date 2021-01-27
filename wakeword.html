@@ -48,15 +48,16 @@
 </script>
 
 <script type="text/html" data-template-name="wake-word">
-    <h4>Wake-Word Settings</h4>
+    <h4>Wake-Word</h4>
     <div class="form-row">
         <label for="node-input-wakeword"><i class="fa fa-commenting-o"></i> Wakeword</label>
         <input type="text" id="node-input-wakeword">
     </div>
+    <h4>Wake-Word Settings</h4>
     <div class="form-row">
         <label for="node-input-threshold"><i class="fa fa-signal"></i> Threshold</label>
-        <input type="range" min="0" max="1" step="0.05" id="node-input-threshold" style="width: 50%;">
-        <label for="node-input-threshold" id="thresholdValue" style="text-align:left; margin-left:5px;"></label>
+        <input type="range" min="0" max="1" step="0.01" id="node-input-threshold" style="width: 70%;">
+        <label for="node-input-threshold" id="thresholdValue" style="text-align:center;"></label>
     </div>
     <div class="form-row">
         <label for="node-input-averaging"><i class="fa fa-sort-amount-asc"></i> Averaging</label>
