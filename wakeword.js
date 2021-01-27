@@ -33,6 +33,10 @@ module.exports = function(RED) {
         this.averaging = (config.averaging === true) ? false : true;
         this.inputProp = config.inputProp || "payload";
         this.outputProp = config.outputProp || "payload";
+        this.controlProp = config.controlProp || "control";
+        this.passthrough = config.passthrough;
+        this.forwardNow = false;
+        this.pauseListening = false;
         this.wakeWordConfig = RED.nodes.getNode(config.wakeword);
         
         var node = this;
@@ -81,7 +85,11 @@ module.exports = function(RED) {
                     clearTimeout(node.recoverTimeout);
                     node.recoverTimeout = false;
                 }
-                node_status(["listening...","blue","dot"]);
+                if (node.forwardNow) {
+                   node_status(["forwarding audio","blue","ring"]);
+                } else {
+                    node_status(["listening...","blue","dot"]);
+                }
             })
             
             node.detector.on('error', err => {
@@ -90,6 +98,13 @@ module.exports = function(RED) {
             });
             
             node.detector.on('keyword', ({keyword, score, threshold, timestamp}) => {
+                if (!node.pauseListening && node.passthrough) {
+                    node.pauseListening = true;
+                    node.forwardNow = true;
+                } else if (node.pauseListening) {
+                    node.warn("wake-word detetected but ignoring as as audio is already beeing forwarded or listening paused");
+                    return;
+                }
                 let msg = {};
                 const detection = {
                     keyword: keyword,
@@ -98,7 +113,7 @@ module.exports = function(RED) {
                     threshold: threshold
                 };
                 msg[node.outputProp] = detection
-                node.send(msg);
+                node.send([msg, null]);
                 node_status(["keyword detected","green","dot"]);
                 recoverTimeoutTimer();
             });
@@ -186,17 +201,114 @@ module.exports = function(RED) {
                 return;
             }
             
-            const input = RED.util.getMessageProperty(msg, node.inputProp);
+            const input = (node.controlProp in msg) ? RED.util.getMessageProperty(msg, node.controlProp) : RED.util.getMessageProperty(msg, node.inputProp);
             
-            if (Buffer.isBuffer(input)) {
-                if (!node.detector) {
-                    node_status(["starting detector","blue","ring"]);
-                    startDetector(node.files);
-                } else {
-                    writeChunk(input);
-                    inputTimeoutTimer();
-                }
+            switch (input){
+            
+                case "stop":
+                    
+                    if(node.detector){
+                        node.detector.destroy();
+                        node.detector = null;
+                        node_status(["stopped","grey","dot"],1500);
+                    } else {
+                        node.warn("not started yet");
+                    }
+                    break;
+                    
+                case "listen":
+                    
+                    if(!node.detector){
+                        node.warn("not started yet");
+                        break;
+                    }              
+                    if(node.pauseListening === true || node.forwardIt === true){
+                        node.pauseListening = false;
+                        node.forwardNow = false;
+                        node_status(["listening...","blue","dot"]);
+                    } else {
+                        node.warn("already listening");
+                    }
+                    break;
+                    
+                case "pause":
+                
+                    if(!node.detector){
+                        node.warn("not started yet");
+                        break;
+                    } 
+                    if(node.pauseListening === false){
+                        node.pauseListening = true;
+                        node_status(["paused listening","blue","dot"]);
+                    } else {
+                        node.warn("already paused");
+                    }
+                    break;
+                    
+                case "stop_pause":
+                
+                    if(!node.detector){
+                        node.warn("not started yet");
+                        break;
+                    } 
+                    if(node.pauseListening === true){
+                        node.pauseListening = false;
+                        node_status(["listening...","blue","dot"]);
+                    } else {
+                        node.warn("not paused");
+                    }
+                    break;
+                   
+                case "forward":
+                
+                    if(!node.detector){
+                        node.warn("not started yet");
+                        break;
+                    } 
+                    if(node.forwardNow === false){
+                        node.forwardNow = true;
+                        if (node.pauseListening === false) {
+                            node_status(["listening to stream and forwarding audio","blue","dot"]);
+                        } else {
+                            node_status(["paused and forwarding audio","blue","dot"]);
+                        }
+                    } else {
+                        node.warn("already forwarding");
+                    }
+                    break;
+                    
+                case "stop_forward":
+                
+                    if(!node.detector){
+                        node.warn("not started yet");
+                        break;
+                    } 
+                    if(node.forwardNow === true){
+                        node.forwardNow = false;
+                        if (node.pauseListening === true) {
+                            node_status(["paused listening","blue","dot"]);
+                        } else {
+                            node_status(["listening...","blue","dot"]);
+                        }
+                    } else {
+                        node.warn("already paused");
+                    }
+                    break;
+                    
+                default:
+                    if (Buffer.isBuffer(input)) {
+                        if(node.forwardNow) { node.send([null,msg]) }
+                        if (!node.detector) {
+                            node_status(["starting detector","blue","ring"]);
+                            startDetector(node.files);
+                        } else {
+                            writeChunk(input);
+                            inputTimeoutTimer();
+                        }
+                    }
+                    break;
             }
+                
             if (done) { done(); }
             return;
         });

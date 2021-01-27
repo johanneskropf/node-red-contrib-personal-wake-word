@@ -21,11 +21,23 @@
             averaging: {value:true},
             inputProp: {value:"payload"},
             outputProp: {value:"payload"},
+            controlProp: {value:"control"},
+            passthrough: {value:false},
             name: {value:""}
         },
         inputs:1,
-        outputs:1,
+        outputs:2,
         icon: "font-awesome/fa-bullhorn",
+        inputLabels: function(index) {
+            return "a stream of audio buffers / control msg's";
+        },
+        outputLabels: function(index) {
+            if (index === 0) {
+                return "wake-word detected"
+            } else {
+                return "forwarded audio buffers";
+            }
+        },
         label: function() {
             return this.name||"wakeword";
         },
@@ -39,6 +51,10 @@
                 type:"msg",
                 types:["msg"]
             }); 
+            $("#node-input-controlProp").typedInput({
+                type:"msg",
+                types:["msg"]
+            });
             $("#node-input-threshold").on("change", function(){
                 let value = $("#node-input-threshold").val();
                 $("#thresholdValue").text(value);
@@ -64,15 +80,23 @@
         <input type="checkbox" id="node-input-averaging" style="display:inline-block; width: auto; vertical-align:baseline;" value="true">
         <label for="node-input-averaging" style="width: 70%;">enable template averaging</label>
     </div>
+    <div class="form-row">
+        <label for="node-input-passthrough"><i class="fa fa-mail-forward"></i> Passthrough</label>
+        <input type="checkbox" id="node-input-passthrough" style="display:inline-block; width: auto; vertical-align:baseline;" value="false">
+        <label for="node-input-passthrough" style="width: 70%;">forward audio on detection event</label>
+    </div>
     <h4>Input/Output Settings</h4>
     <div class="form-row">
         <label for="node-input-inputProp"><i class="fa fa-sign-in"></i> Input Field</label>
         <input type="text" id="node-input-inputProp">
-        <input type="hidden" id="node-input-inputType">
     </div>
     <div class="form-row">
         <label for="node-input-outputProp"><i class="fa fa-sign-out"></i> Output Field</label>
         <input type="text" id="node-input-outputProp">
+    </div>
+    <div class="form-row">
+        <label for="node-input-controlProp"><i class="fa fa-cogs"></i> Control Field</label>
+        <input type="text" id="node-input-controlProp">
     </div>
     <h4>Other Settings</h4>
     <div class="form-row">
