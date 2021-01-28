@@ -79,7 +79,8 @@
     A wake-word configuration defines which audio files should be used to make a template to compare against
     the incoming audio stream to detect the wake-word. The audio files used should be 
     trimmed clean noise free recordings of the wake-word you want to detect. It is best if the samples 
-    are recorded with the microphone you plan to use in production but in a quiet environment.
+    are recorded with the microphone you plan to use in production but in a quiet environment. You will 
+    need 3-10 samples of the wake-word being said.
     The files need to be wav audio in the following format:
     little endian, signed-integer, mono, 16000 Hz, 16 bit.
     You can either add the paths to each file to be used individually or add a path to a folder 
