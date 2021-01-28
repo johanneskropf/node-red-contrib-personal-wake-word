@@ -87,7 +87,7 @@ module.exports = function(RED) {
                 }
                 if (node.forwardNow) {
                    node_status(["forwarding audio","blue","ring"]);
-                } else {
+                } else if (!node.pauseListening) {
                     node_status(["listening...","blue","dot"]);
                 }
             })
@@ -302,8 +302,10 @@ module.exports = function(RED) {
                             node_status(["starting detector","blue","ring"]);
                             startDetector(node.files).catch(function handleError(err) {
                                     node.errorStop = true;
-                                    node.detector.destroy();
-                                    node.detector = null;
+                                    if (node.detector) {
+                                        node.detector.destroy();
+                                        node.detector = null;
+                                    }
                                     node_status(["error","red","dot"]);
                                     node.error(err);
                                 });
