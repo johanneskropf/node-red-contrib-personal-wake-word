@@ -72,7 +72,7 @@ module.exports = function(RED) {
         async function startDetector (input) {
             
             node.detector = new wakewordDetector ({
-                threshold: 0.5 // Default value
+                threshold: 0.5
             });
             
             await node.detector.addKeyword(node.wakeWordConfig.name , input, {
@@ -300,7 +300,9 @@ module.exports = function(RED) {
                         if(node.forwardNow) { node.send([null,msg]) }
                         if (!node.detector) {
                             node_status(["starting detector","blue","ring"]);
-                            startDetector(node.files);
+                            startDetector(node.files).catch(function handleError(err) {
+                                    node.error(err);
+                                });
                         } else {
                             writeChunk(input);
                             inputTimeoutTimer();
