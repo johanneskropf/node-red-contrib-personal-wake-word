@@ -301,6 +301,10 @@ module.exports = function(RED) {
                         if (!node.detector) {
                             node_status(["starting detector","blue","ring"]);
                             startDetector(node.files).catch(function handleError(err) {
+                                    node.errorStop = true;
+                                    node.detector.destroy();
+                                    node.detector = null;
+                                    node_status(["error","red","dot"]);
                                     node.error(err);
                                 });
                         } else {
