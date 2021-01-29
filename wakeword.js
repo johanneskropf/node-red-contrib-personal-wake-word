@@ -352,13 +352,15 @@ module.exports = function(RED) {
         });
         
         node.on("close",function() {
-            clearTimeout(node.inputTimeout);
+            if (node.inputTimeout) { clearTimeout(node.inputTimeout); }
             node.inputTimeout = false;
             node.detector.destroy();
             node.detector = null;
-            clearTimeout(node.statusTimer);
+            if (node.statusTimer) { clearTimeout(node.statusTimer); }
             node.statusTimer = false;
             node.status({});
+            if (node.recoverTimeout) { clearTimeout(node.recoverTimeout); }
+            node.recoverTimeout = false;
         });
     
     }
