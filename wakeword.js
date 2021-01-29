@@ -71,13 +71,31 @@ module.exports = function(RED) {
         
         async function startDetector (input) {
             
-            node.detector = new wakewordDetector ({
-                threshold: 0.5
-            });
+            try {
+                node.detector = new wakewordDetector ({
+                    threshold: 0.5
+                });
+            } catch (err) {
+                node.errorStop = true;
+                if (node.detector) {
+                    node.detector.destroy();
+                    node.detector = null;
+                }
+                node_status(["error","red","dot"]);
+                node.error(err);
+            }
             
             await node.detector.addKeyword(node.wakeWordConfig.name , input, {
                 disableAveraging: node.averaging, 
                 threshold: node.threshold
+            }).catch ((err) => {
+                node.errorStop = true;
+                if (node.detector) {
+                    node.detector.destroy();
+                    node.detector = null;
+                }
+                node_status(["error","red","dot"]);
+                node.error(err);
             });
             
             node.detector.on('ready', () => {
@@ -176,14 +194,26 @@ module.exports = function(RED) {
                         content.forEach(item => {
                             if (item.match(/\.wav$/g) !== null) {
                                 let fullPath = path.join(file,item);
-                                if (!node.files.includes(fullPath)) { node.files.push(fullPath); }
+                                if (!node.files.includes(file)) {
+                                    if (fs.statSync(fullPath).size > 44) {
+                                        node.files.push(fullPath);
+                                    } else {
+                                        node.warn(`ignoring ${item} because it seems to be an empty wav`);
+                                    }
+                                }
                             } else {
                                 node.warn(`ignoring ${item} as it is not a wav`);
                             }
                         });
                     });
                 } else if (file.match(/\.wav$/g) !== null) {
-                    if (!node.files.includes(file)) { node.files.push(file); }
+                    if (!node.files.includes(file)) {
+                        if (fs.statSync(file).size > 44) {
+                            node.files.push(file);
+                        } else {
+                            node.warn(`ignoring ${file} because it seems to be an empty wav`);
+                        }
+                    }
                 } else {
                     node.warn(`ignoring ${file} as it is neither a folder nor a wav`);
                 }
@@ -300,7 +330,7 @@ module.exports = function(RED) {
                         if(node.forwardNow) { node.send([null,msg]) }
                         if (!node.detector) {
                             node_status(["starting detector","blue","ring"]);
-                            startDetector(node.files).catch(function handleError(err) {
+                            startDetector(node.files).catch((err) => {
                                     node.errorStop = true;
                                     if (node.detector) {
                                         node.detector.destroy();
