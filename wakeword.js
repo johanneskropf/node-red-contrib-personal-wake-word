@@ -73,6 +73,7 @@ module.exports = function(RED) {
             
             try {
                 node.detector = new wakewordDetector ({
+                    vadMode: wakewordDetector.VadMode.VERY_AGGRESSIVE,
                     threshold: 0.5
                 });
             } catch (err) {
@@ -99,6 +100,7 @@ module.exports = function(RED) {
             });
             
             node.detector.on('ready', () => {
+                node.warn("ready");
                 if (node.recoverTimeout) {
                     clearTimeout(node.recoverTimeout);
                     node.recoverTimeout = false;
@@ -115,7 +117,7 @@ module.exports = function(RED) {
                 node.error(err);
             });
             
-            node.detector.on('keyword', ({keyword, score, threshold, timestamp}) => {
+            node.detector.on('data', ({keyword, score, threshold, timestamp}) => {
                 if (!node.pauseListening && node.passthrough) {
                     node.pauseListening = true;
                     node.forwardNow = true;
