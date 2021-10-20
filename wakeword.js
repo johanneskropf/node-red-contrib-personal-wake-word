@@ -172,14 +172,17 @@ module.exports = function(RED) {
             node.recoverTimeout = setTimeout(() => {
                 node.warn("something went wrong after detection, trying to recover");
                 try {
-                    node.detector.removeAllListeners();
-                    node.detector.destroy();
+                    if (node.detector) {
+                        node.detector.removeAllListeners();
+                        node.detector.destroy();
+                    }
                     node.detector = null;
                     node.recoverTimeout = false;
                     node_status(["stopped","grey","dot"],1500);
                 } catch (error) {
                     node.error(`Couldn't revover: ${error}`);
                 }
+                
             }, 10000);
         }
         
